@@ -7,8 +7,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Link } from './link.schema';
 
-import { DELAY } from 'src/lib/constants';
-
 @Injectable()
 export class CoreService {
   savedLinks: Set<string> = new Set();
@@ -24,7 +22,7 @@ export class CoreService {
 
   async init() {
     await this.getAllLinksFromDB();
-    setInterval(this.checkForNewItems, DELAY);
+    setInterval(this.checkForNewItems, 1000 * 60 * 60); // 1 hour
   }
 
   async getAllLinksFromDB() {
