@@ -6,6 +6,7 @@ declare global {
       TELEGRAM_TOKEN: string;
       GOOGLE_CLOUD_PRIVATE_KEY: string;
       GOOGLE_CLOUD_CLIENT_EMAIL: string;
+      MONGO_URL: string;
     }
   }
 }

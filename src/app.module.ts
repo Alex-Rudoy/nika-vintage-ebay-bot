@@ -12,9 +12,7 @@ import { TelegramService } from './telegram/telegram.service';
 @Module({
   imports: [
     ConfigModule.forRoot(),
-    MongooseModule.forRoot(
-      'mongodb+srv://Rudoy:Mongo1w2e3r4t@cluster0.uanrk.mongodb.net/Vintage?retryWrites=true&w=majority',
-    ),
+    MongooseModule.forRoot(process.env.MONGO_URL),
     MongooseModule.forFeature([{ name: Link.name, schema: LinkSchema }]),
     MongooseModule.forFeature([{ name: ChatId.name, schema: ChatIdSchema }]),
   ],
