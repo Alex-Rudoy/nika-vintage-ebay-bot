@@ -30,14 +30,13 @@ export class CoreService {
   async getAllLinksFromDB() {
     const linksFromDB = await this.linkModel.find().exec();
     this.savedLinks = new Set(linksFromDB.map((link) => link.link));
-    console.log('this.savedLinks', this.savedLinks);
   }
 
   async checkForNewItems() {
     const linksFromGoogleDoc =
       await this.googleSpreadsheetService.getLinksFromGoogleSheet();
 
-    linksFromGoogleDoc.forEach(async (link) => {
+    for (const link of linksFromGoogleDoc) {
       const productLinksFound = await this.getProductLinksFromHTML(link);
       productLinksFound
         .map((productLink) => productLink.split('?')[0]) // remove query params
@@ -48,7 +47,8 @@ export class CoreService {
           await this.linkModel.create({ link: productLink });
           await this.telegramService.sendMessageInTelegram(productLink);
         });
-    });
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 second to not get banned by ebay
+    }
   }
 
   async getProductLinksFromHTML(ebayListLink: string): Promise<string[]> {

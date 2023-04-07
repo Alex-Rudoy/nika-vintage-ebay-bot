@@ -37,7 +37,6 @@ export class TelegramService {
   async getAllChatIdsFromDB() {
     const chatIdsFromDB = await this.chatIdModel.find().exec();
     this.chatIds = chatIdsFromDB.map((chatId) => chatId.chatId);
-    console.log('this.chatIds', this.chatIds);
   }
 
   async addId(id: number) {
