@@ -31,6 +31,7 @@ export class CoreService {
   }
 
   async checkForNewItems() {
+    console.log('Checking for new items...');
     const linksFromGoogleDoc =
       await this.googleSpreadsheetService.getLinksFromGoogleSheet();
 
