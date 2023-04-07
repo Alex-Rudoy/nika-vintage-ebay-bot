@@ -5,6 +5,11 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  @Get('')
+  async ok() {
+    return 'OK';
+  }
+
   @Get('page/:brand')
   async getHello(@Param('brand') brand: string) {
     return await this.appService.getHello(brand);
