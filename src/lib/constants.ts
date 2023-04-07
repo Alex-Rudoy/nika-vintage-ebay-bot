@@ -1,3 +1,1 @@
-export const FIVE_MINUTES = 5 * 60 * 1000;
-
-// nika-vintage-ebay-bot@nikavintageebaybot.iam.gserviceaccount.com
+export const DELAY = 1000 * 60 * 30; // 30 minutes
