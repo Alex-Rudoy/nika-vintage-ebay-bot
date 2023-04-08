@@ -22,6 +22,7 @@ export class CoreService {
 
   async init() {
     await this.getAllLinksFromDB();
+    this.checkForNewItems();
     setInterval(this.checkForNewItems, 1000 * 60 * 60); // 1 hour
   }
 
