@@ -10,7 +10,7 @@ export class AppController {
     return 'OK';
   }
 
-  @Get('page/:brand')
+  @Get(':brand')
   async getHello(@Param('brand') brand: string) {
     return await this.appService.getHello(brand);
   }

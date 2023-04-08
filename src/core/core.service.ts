@@ -17,13 +17,13 @@ export class CoreService {
     @InjectModel(Link.name) private linkModel: Model<Link>,
   ) {
     this.checkForNewItems = this.checkForNewItems.bind(this);
-    // this.init();
+    this.init();
   }
 
-  // async init() {
-  //   await this.getAllLinksFromDB();
-  //   setInterval(this.checkForNewItems, 1000 * 60 * 60); // 1 hour
-  // }
+  async init() {
+    await this.getAllLinksFromDB();
+    setInterval(this.checkForNewItems, 1000 * 60 * 60); // 1 hour
+  }
 
   async getAllLinksFromDB() {
     const linksFromDB = await this.linkModel.find().exec();
