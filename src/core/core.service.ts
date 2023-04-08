@@ -17,13 +17,13 @@ export class CoreService {
     @InjectModel(Link.name) private linkModel: Model<Link>,
   ) {
     this.checkForNewItems = this.checkForNewItems.bind(this);
-    this.init();
+    // this.init();
   }
 
-  async init() {
-    await this.getAllLinksFromDB();
-    setInterval(this.checkForNewItems, 1000 * 60 * 60); // 1 hour
-  }
+  // async init() {
+  //   await this.getAllLinksFromDB();
+  //   setInterval(this.checkForNewItems, 1000 * 60 * 60); // 1 hour
+  // }
 
   async getAllLinksFromDB() {
     const linksFromDB = await this.linkModel.find().exec();
@@ -31,6 +31,7 @@ export class CoreService {
   }
 
   async checkForNewItems() {
+    await this.getAllLinksFromDB();
     console.log('Checking for new items...');
     const linksFromGoogleDoc =
       await this.googleSpreadsheetService.getLinksFromGoogleSheet();
@@ -51,6 +52,7 @@ export class CoreService {
   }
 
   async getProductLinksFromHTML(ebayListLink: string): Promise<string[]> {
+    console.log('Parsing ', ebayListLink);
     const productLinksOnPage: string[] = [];
     try {
       const response = await fetch(`${ebayListLink}&_fcid=3`);

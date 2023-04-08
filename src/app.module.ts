@@ -8,6 +8,7 @@ import { Link, LinkSchema } from './core/link.schema';
 import { GoogleSpreadsheetsService } from './google-spreadsheets/google-spreadsheets.service';
 import { ChatId, ChatIdSchema } from './telegram/chatId.schema';
 import { TelegramService } from './telegram/telegram.service';
+import { CoreController } from './core/core.controller';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { TelegramService } from './telegram/telegram.service';
     MongooseModule.forFeature([{ name: ChatId.name, schema: ChatIdSchema }]),
   ],
 
-  controllers: [AppController],
+  controllers: [AppController, CoreController],
   providers: [
     AppService,
     TelegramService,
