@@ -22,7 +22,10 @@ export class GoogleSpreadsheetsService {
     const sheet =
       this.doc.sheetsByTitle[process.env.GOOGLE_SPREADSHEET_WORKSHEET_NAME];
     const rows = await sheet.getRows();
-    const links = rows.map((row) => row.LinkRaw).filter(Boolean);
+    const links = rows
+      .filter((row) => row.SendToTelegram === 'TRUE')
+      .map((row) => row.LinkRaw)
+      .filter(Boolean);
     return links;
   }
 }

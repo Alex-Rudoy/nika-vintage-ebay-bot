@@ -32,30 +32,37 @@ export class CoreService {
   }
 
   async checkForNewItems() {
-    await this.getAllLinksFromDB();
-    console.log('Checking for new items...');
     const linksFromGoogleDoc =
       await this.googleSpreadsheetService.getLinksFromGoogleSheet();
 
-    for (const link of linksFromGoogleDoc) {
-      const productLinksFound = await this.getProductLinksFromHTML(link);
-      productLinksFound
-        .map((productLink) => productLink.split('?')[0]) // remove query params
-        .forEach(async (productLink) => {
-          if (this.savedLinks.has(productLink)) return;
+    for (const linkFromGoogleDoc of linksFromGoogleDoc) {
+      const productLinksFound = await this.getProductLinksFromHTML(
+        linkFromGoogleDoc,
+      );
+      for (const productLink of productLinksFound) {
+        await this.addLinkAndNotify(productLink);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 5)); // wait 5 second to not get banned by ebay
+    }
+  }
 
-          this.savedLinks.add(productLink);
-          await this.linkModel.create({ link: productLink });
-          await this.telegramService.sendMessageInTelegram(productLink);
-        });
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 second to not get banned by ebay
+  async addLinkAndNotify(link: string) {
+    try {
+      if (this.savedLinks.has(link)) return;
+
+      await this.linkModel.create({ link });
+      this.savedLinks.add(link);
+      await this.telegramService.sendMessageInTelegram(link);
+    } catch (error) {
+      console.log('Error in add link:', error);
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 10)); // wait 10 sec and try again
+      await this.addLinkAndNotify(link);
     }
   }
 
   async getProductLinksFromHTML(ebayListLink: string): Promise<string[]> {
-    console.log('Parsing ', ebayListLink);
-    const productLinksOnPage: string[] = [];
     try {
+      const productLinksOnPage: string[] = [];
       const response = await fetch(`${ebayListLink}&_fcid=3`);
       const html = await response.text();
       const root = parse(html);
@@ -67,7 +74,7 @@ export class CoreService {
             .querySelector('a.s-item__link')
             ?.getAttribute('href');
 
-          if (newLink) productLinksOnPage.push(newLink);
+          if (newLink) productLinksOnPage.push(newLink.split('?')[0]); // remove query params
         }
 
         if (listItem.classList.contains('srp-river-answer--REWRITE_START')) {
