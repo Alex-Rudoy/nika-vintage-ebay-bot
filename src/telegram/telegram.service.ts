@@ -13,12 +13,22 @@ export class TelegramService {
   constructor(@InjectModel(ChatId.name) private chatIdModel: Model<ChatId>) {
     this.telegramBot = new Telegraf(process.env.TELEGRAM_TOKEN);
 
-    this.telegramBot.start((ctx) => {
-      ctx.reply('Привет булочка)');
-      this.addId(ctx.chat.id);
+    this.telegramBot.start(async (ctx) => {
+      try {
+        await ctx.reply('Привет булочка)');
+        this.addId(ctx.chat.id);
+      } catch (error) {
+        // do nothing
+      }
     });
 
-    this.telegramBot.on('sticker', (ctx) => ctx.reply('😂'));
+    this.telegramBot.on('sticker', async (ctx) => {
+      try {
+        ctx.reply('😂');
+      } catch (error) {
+        // do nothing
+      }
+    });
 
     this.telegramBot.command('quit', async (ctx) => {
       await ctx.telegram.leaveChat(ctx.message.chat.id);
@@ -40,19 +50,28 @@ export class TelegramService {
   }
 
   async addId(id: number) {
+    if (this.chatIds.includes(id)) {
+      return;
+    }
     await this.chatIdModel.create({ chatId: id });
     this.chatIds.push(id);
   }
 
   async deleteId(id: number) {
-    await this.chatIdModel.deleteOne({ chatId: id });
-    this.chatIds.filter((chatId) => chatId !== id);
+    this.chatIdModel.deleteOne({ chatId: id }).then(() => {
+      this.chatIds = this.chatIds.filter((chatId) => chatId !== id);
+    });
   }
 
   async sendMessageInTelegram(text: string) {
     const promises = this.chatIds.map(async (chatId) => {
-      await this.telegramBot.telegram.sendMessage(chatId, text);
+      try {
+        await this.telegramBot.telegram.sendMessage(chatId, text);
+      } catch (error) {
+        this.deleteId(chatId);
+      }
     });
+
     await Promise.all(promises);
   }
 }
