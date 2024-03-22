@@ -7,20 +7,20 @@ import { ChatId } from './chatId.schema';
 
 @Injectable()
 export class TelegramService {
-  private chatIds: number[] = [];
+  private chatIds: number[] = [200511302, 285463757];
   private telegramBot: Telegraf;
 
   constructor(@InjectModel(ChatId.name) private chatIdModel: Model<ChatId>) {
     this.telegramBot = new Telegraf(process.env.TELEGRAM_TOKEN);
 
-    this.telegramBot.start(async (ctx) => {
-      try {
-        await ctx.reply('Привет булочка)');
-        this.addId(ctx.chat.id);
-      } catch (error) {
-        // do nothing
-      }
-    });
+    // this.telegramBot.start(async (ctx) => {
+    //   try {
+    //     await ctx.reply('Привет булочка)');
+    //     this.addId(ctx.chat.id);
+    //   } catch (error) {
+    //     // do nothing
+    //   }
+    // });
 
     this.telegramBot.on('sticker', async (ctx) => {
       try {
@@ -30,18 +30,18 @@ export class TelegramService {
       }
     });
 
-    this.telegramBot.command('quit', async (ctx) => {
-      await ctx.telegram.leaveChat(ctx.message.chat.id);
-      await ctx.leaveChat();
-      this.deleteId(ctx.chat.id);
-    });
+    // this.telegramBot.command('quit', async (ctx) => {
+    //   await ctx.telegram.leaveChat(ctx.message.chat.id);
+    //   await ctx.leaveChat();
+    //   this.deleteId(ctx.chat.id);
+    // });
 
     this.telegramBot.launch();
 
     process.once('SIGINT', () => this.telegramBot.stop('SIGINT'));
     process.once('SIGTERM', () => this.telegramBot.stop('SIGTERM'));
 
-    this.getAllChatIdsFromDB();
+    // this.getAllChatIdsFromDB();
   }
 
   async getAllChatIdsFromDB() {
@@ -68,7 +68,7 @@ export class TelegramService {
       try {
         await this.telegramBot.telegram.sendMessage(chatId, text);
       } catch (error) {
-        this.deleteId(chatId);
+        // this.deleteId(chatId);
       }
     });
 
