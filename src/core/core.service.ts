@@ -68,6 +68,16 @@ export class CoreService {
       const root = parse(html);
       const listOfResults = root.querySelectorAll('ul.srp-results li');
 
+      if (
+        root
+          .querySelector(
+            '.srp-river-answer .su-notice .section-notice .section-notice__main',
+          )
+          ?.innerText?.includes('0 results found in the ')
+      ) {
+        return [];
+      }
+
       for (const listItem of listOfResults) {
         if (listItem.classList.contains('s-item')) {
           const newLink = listItem
