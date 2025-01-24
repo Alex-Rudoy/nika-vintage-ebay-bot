@@ -22,10 +22,14 @@ export class GoogleSpreadsheetsService {
     const sheet =
       this.doc.sheetsByTitle[process.env.GOOGLE_SPREADSHEET_WORKSHEET_NAME];
     const rows = await sheet.getRows();
-    const links = rows
-      .filter((row) => row.SendToTelegram === 'TRUE')
-      .map((row) => row.LinkRaw)
+    const linksUK = rows
+      .filter((row) => row.SendToTgUK === 'TRUE')
+      .map((row) => row.URLUK)
       .filter(Boolean);
-    return links;
+    const linksUSA = rows
+      .filter((row) => row.SendToTgUSA === 'TRUE')
+      .map((row) => row.URLUSA)
+      .filter(Boolean);
+    return [...linksUK, ...linksUSA];
   }
 }
