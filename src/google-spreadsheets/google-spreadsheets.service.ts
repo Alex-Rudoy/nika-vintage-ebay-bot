@@ -10,7 +10,9 @@ export class GoogleSpreadsheetsService {
     this.doc = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID);
   }
 
-  async getLinksFromGoogleSheet() {
+  async getLinksFromGoogleSheet(): Promise<
+    { url: string; brandName: string }[]
+  > {
     await this.doc.useServiceAccountAuth({
       private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY.split(
         String.raw`\n`,
@@ -24,12 +26,18 @@ export class GoogleSpreadsheetsService {
     const rows = await sheet.getRows();
     const linksUK = rows
       .filter((row) => row.SendToTgUK === 'TRUE')
-      .map((row) => row.URLUK)
-      .filter(Boolean);
+      .map((row) => ({
+        url: row.URLUK,
+        brandName: `${row.BrandName}_UK`,
+      }))
+      .filter((link) => link.url);
     const linksUSA = rows
       .filter((row) => row.SendToTgUSA === 'TRUE')
-      .map((row) => row.URLUSA)
-      .filter(Boolean);
+      .map((row) => ({
+        url: row.URLUSA,
+        brandName: `${row.BrandName}_USA`,
+      }))
+      .filter((link) => link.url);
     return [...linksUK, ...linksUSA];
   }
 }

@@ -37,26 +37,26 @@ export class CoreService {
 
     for (const linkFromGoogleDoc of linksFromGoogleDoc) {
       const productLinksFound = await this.getProductLinksFromHTML(
-        linkFromGoogleDoc,
+        linkFromGoogleDoc.url,
       );
       for (const productLink of productLinksFound) {
-        await this.addLinkAndNotify(productLink);
+        await this.addLinkAndNotify(productLink, linkFromGoogleDoc.brandName);
       }
       await new Promise((resolve) => setTimeout(resolve, 1000 * 5)); // wait 5 second to not get banned by ebay
     }
   }
 
-  async addLinkAndNotify(link: string) {
+  async addLinkAndNotify(link: string, brandName: string) {
     try {
       if (this.savedLinks.has(link)) return;
 
       await this.linkModel.create({ link });
       this.savedLinks.add(link);
-      await this.telegramService.sendMessageInTelegram(link);
+      await this.telegramService.sendMessageInTelegram(`#${brandName} ${link}`);
     } catch (error) {
       console.log('Error in add link:', error);
       await new Promise((resolve) => setTimeout(resolve, 1000 * 10)); // wait 10 sec and try again
-      await this.addLinkAndNotify(link);
+      await this.addLinkAndNotify(link, brandName);
     }
   }
 
