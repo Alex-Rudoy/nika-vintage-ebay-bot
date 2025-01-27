@@ -52,7 +52,10 @@ export class CoreService {
 
       await this.linkModel.create({ link });
       this.savedLinks.add(link);
-      await this.telegramService.sendMessageInTelegram(`#${brandName} ${link}`);
+      const formattedBrandName = brandName.replace(/\s+/g, '_');
+      await this.telegramService.sendMessageInTelegram(
+        `#${formattedBrandName} ${link}`,
+      );
     } catch (error) {
       console.log('Error in add link:', error);
       await new Promise((resolve) => setTimeout(resolve, 1000 * 10)); // wait 10 sec and try again
