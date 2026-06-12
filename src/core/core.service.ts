@@ -27,8 +27,10 @@ export class CoreService {
   }
 
   async getAllLinksFromDB() {
+    console.log('getAllLinksFromDB');
     const linksFromDB = await this.linkModel.find().exec();
     this.savedLinks = new Set(linksFromDB.map((link) => link.link));
+    console.log('saved links size: ', this.savedLinks.size);
   }
 
   async checkForNewItems() {
@@ -48,6 +50,7 @@ export class CoreService {
 
   async addLinkAndNotify(link: string, brandName: string) {
     try {
+      console.log('adding link: ', link);
       if (this.savedLinks.has(link)) return;
 
       await this.linkModel.create({ link });
@@ -65,11 +68,15 @@ export class CoreService {
 
   async getProductLinksFromHTML(ebayListLink: string): Promise<string[]> {
     try {
+      console.log('fetching: ', ebayListLink);
+
       const productLinksOnPage: string[] = [];
       const response = await fetch(`${ebayListLink}&_fcid=3`);
       const html = await response.text();
       const root = parse(html);
+      console.log('html: ', html);
       const listOfResults = root.querySelectorAll('ul.srp-results li');
+      console.log('listOfResults: ', listOfResults);
 
       if (
         root
@@ -78,14 +85,16 @@ export class CoreService {
           )
           ?.innerText?.includes('0 results found in the ')
       ) {
+        console.log('no results found');
         return [];
       }
 
       for (const listItem of listOfResults) {
-        if (listItem.classList.contains('s-item')) {
+        if (listItem.classList.contains('s-card')) {
           const newLink = listItem
-            .querySelector('a.s-item__link')
+            .querySelector('a.su-link')
             ?.getAttribute('href');
+          console.log('newLink: ', newLink);
 
           if (newLink) productLinksOnPage.push(newLink.split('?')[0]); // remove query params
         }
