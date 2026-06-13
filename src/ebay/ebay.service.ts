@@ -66,7 +66,9 @@ export class EbayService {
     const data = (await response.json()) as SearchResponse;
     const items = data.itemSummaries ?? [];
 
-    this.logger.log(`eBay API returned ${items.length} items (total: ${data.total ?? 0})`);
+    this.logger.log(
+      `eBay API returned ${items.length} items (total: ${data.total ?? 0})`,
+    );
 
     return items
       .map((item) => item.itemWebUrl?.split('?')[0])
@@ -89,20 +91,17 @@ export class EbayService {
       'base64',
     );
 
-    const response = await fetch(
-      `${this.apiBase}/identity/v1/oauth2/token`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          scope: 'https://api.ebay.com/oauth/api_scope',
-        }),
+    const response = await fetch(`${this.apiBase}/identity/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-    );
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        scope: 'https://api.ebay.com/oauth/api_scope',
+      }),
+    });
 
     if (!response.ok) {
       const body = await response.text();
