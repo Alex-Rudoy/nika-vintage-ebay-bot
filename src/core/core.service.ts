@@ -18,15 +18,6 @@ export class CoreService {
     @InjectModel(Link.name) private linkModel: Model<Link>,
   ) {}
 
-  async backfillLegacyLinks(): Promise<void> {
-    // Mongoose strips $set.createdAt on updates (immutable field → $setOnInsert only).
-    // Use the native driver and derive createdAt from the ObjectId insertion time.
-    await this.linkModel.collection.updateMany(
-      { createdAt: { $exists: false } },
-      [{ $set: { createdAt: { $toDate: '$_id' } } }],
-    );
-  }
-
   async cleanupOldLinks(): Promise<void> {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -35,7 +26,6 @@ export class CoreService {
   }
 
   async checkForNewItems(): Promise<void> {
-    await this.backfillLegacyLinks();
     await this.cleanupOldLinks();
 
     const brandSearches =
