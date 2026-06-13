@@ -8,7 +8,6 @@ import { Link, LinkSchema } from './core/link.schema';
 import { GoogleSpreadsheetsService } from './google-spreadsheets/google-spreadsheets.service';
 import { ChatId, ChatIdSchema } from './telegram/chatId.schema';
 import { TelegramService } from './telegram/telegram.service';
-import { CoreController } from './core/core.controller';
 import { EbayService } from './ebay/ebay.service';
 
 @Module({
@@ -19,7 +18,7 @@ import { EbayService } from './ebay/ebay.service';
     MongooseModule.forFeature([{ name: ChatId.name, schema: ChatIdSchema }]),
   ],
 
-  controllers: [AppController, CoreController],
+  controllers: [AppController],
   providers: [
     AppService,
     TelegramService,
