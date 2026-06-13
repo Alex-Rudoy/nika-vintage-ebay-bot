@@ -3,12 +3,14 @@ import { EbayService } from 'src/ebay/ebay.service';
 import { GoogleSpreadsheetsService } from 'src/google-spreadsheets/google-spreadsheets.service';
 import { TelegramService } from 'src/telegram/telegram.service';
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Link } from './link.schema';
 
 @Injectable()
 export class CoreService {
+  private readonly logger = new Logger(CoreService.name);
+
   constructor(
     private readonly googleSpreadsheetService: GoogleSpreadsheetsService,
     private readonly telegramService: TelegramService,
@@ -39,11 +41,21 @@ export class CoreService {
     const brandSearches =
       await this.googleSpreadsheetService.getBrandSearchesFromGoogleSheet();
 
+    this.logger.log(`Checking ${brandSearches.length} brand searches`);
+
     for (const brandSearch of brandSearches) {
-      const productLinksFound = await this.ebayService.search(
+      const result = await this.ebayService.search(
         brandSearch.searchParams,
+        brandSearch.brandName,
       );
-      for (const productLink of productLinksFound) {
+
+      if (result.error) {
+        this.logger.error(
+          `eBay search failed for ${brandSearch.brandName}: HTTP ${result.error.status} — ${result.error.body}`,
+        );
+      }
+
+      for (const productLink of result.links) {
         await this.addLinkAndNotify(productLink, brandSearch.brandName);
       }
       await new Promise((resolve) => setTimeout(resolve, 1000 * 2));

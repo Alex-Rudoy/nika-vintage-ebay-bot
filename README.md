@@ -23,44 +23,20 @@ Monitors eBay saved searches for vintage items and sends new listing links to Te
 
 ---
 
-## Step 0: MongoDB migration (before first deploy)
+## MongoDB setup
 
-Run this **once** in production if the `links` collection may contain duplicate `link` values. The app relies on a unique index for deduplication.
-
-### Option A: npm script (recommended)
-
-Uses `MONGO_URL` from your local `.env`:
-
-```bash
-npm run build
-npm run mongo:step0
-```
-
-Script: [`src/mongo-step0.ts`](src/mongo-step0.ts) — finds duplicates, deletes extras, creates the unique index, prints verification.
-
-### Option B: mongosh
-
-Connect with [mongosh](https://www.mongodb.com/docs/mongodb-shell/) to your database, then:
+The app creates a unique index on `links.link` at startup. If the collection already has duplicate `link` values, index creation will fail — deduplicate first with [mongosh](https://www.mongodb.com/docs/mongodb-shell/):
 
 ```javascript
-// 0a. Find duplicates
+// Find duplicates
 db.links.aggregate([
   { $group: { _id: '$link', count: { $sum: 1 }, ids: { $push: '$_id' } } },
   { $match: { count: { $gt: 1 } } },
 ]);
 
-// 0b. Delete extras (keep one document per link)
-// For each duplicate group from 0a, delete all but one _id:
-// db.links.deleteOne({ _id: ObjectId("...") })
-
-// 0c. Create index
+// Delete extras (keep one document per link), then create the index:
 db.links.createIndex({ link: 1 }, { unique: true });
-
-// 0d. Verify
-db.links.getIndexes();
 ```
-
-After migration, deploy the app and run a test (local `npm run cron` or GHA `workflow_dispatch`).
 
 ---
 
@@ -137,7 +113,6 @@ EBAY_CLIENT_SECRET=...
 npm install
 npm run build
 npm run lint
-npm run mongo:step0   # one-time DB migration (before first deploy)
 npm run cron          # one-shot job (same as production)
 ```
 

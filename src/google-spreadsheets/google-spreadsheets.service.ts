@@ -29,8 +29,15 @@ export class GoogleSpreadsheetsService {
     });
     await this.doc.loadInfo();
 
-    const sheet =
-      this.doc.sheetsByTitle[process.env.GOOGLE_SPREADSHEET_WORKSHEET_NAME];
+    const worksheetName = process.env.GOOGLE_SPREADSHEET_WORKSHEET_NAME;
+    const sheet = this.doc.sheetsByTitle[worksheetName];
+    if (!sheet) {
+      const available = Object.keys(this.doc.sheetsByTitle).join(', ');
+      throw new Error(
+        `Worksheet "${worksheetName}" not found. Available tabs: ${available}`,
+      );
+    }
+
     const rows = await sheet.getRows();
 
     const ukSearches = rows

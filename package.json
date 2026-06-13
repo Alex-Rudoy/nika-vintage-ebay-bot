@@ -24,7 +24,6 @@
     "@nestjs/platform-express": "^9.0.0",
     "google-spreadsheet": "^3.3.0",
     "mongoose": "^7.0.3",
-    "node-html-parser": "^6.1.5",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.2.0"
   },
