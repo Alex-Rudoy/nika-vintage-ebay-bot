@@ -10,7 +10,6 @@ declare global {
       MONGO_URL: string;
       EBAY_CLIENT_ID: string;
       EBAY_CLIENT_SECRET: string;
-      EBAY_ENVIRONMENT?: 'production' | 'sandbox';
     }
   }
 }

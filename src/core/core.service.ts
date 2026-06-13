@@ -17,9 +17,11 @@ export class CoreService {
   ) {}
 
   async backfillLegacyLinks(): Promise<void> {
-    await this.linkModel.updateMany(
+    // Mongoose strips $set.createdAt on updates (immutable field → $setOnInsert only).
+    // Use the native driver and derive createdAt from the ObjectId insertion time.
+    await this.linkModel.collection.updateMany(
       { createdAt: { $exists: false } },
-      { $set: { createdAt: new Date() } },
+      [{ $set: { createdAt: { $toDate: '$_id' } } }],
     );
   }
 
@@ -34,15 +36,15 @@ export class CoreService {
     await this.backfillLegacyLinks();
     await this.cleanupOldLinks();
 
-    const linksFromGoogleDoc =
-      await this.googleSpreadsheetService.getLinksFromGoogleSheet();
+    const brandSearches =
+      await this.googleSpreadsheetService.getBrandSearchesFromGoogleSheet();
 
-    for (const linkFromGoogleDoc of linksFromGoogleDoc) {
-      const productLinksFound = await this.ebayService.searchByUrl(
-        linkFromGoogleDoc.url,
+    for (const brandSearch of brandSearches) {
+      const productLinksFound = await this.ebayService.search(
+        brandSearch.searchParams,
       );
       for (const productLink of productLinksFound) {
-        await this.addLinkAndNotify(productLink, linkFromGoogleDoc.brandName);
+        await this.addLinkAndNotify(productLink, brandSearch.brandName);
       }
       await new Promise((resolve) => setTimeout(resolve, 1000 * 2));
     }
@@ -72,10 +74,5 @@ export class CoreService {
       await this.linkModel.deleteOne({ link });
       throw error;
     }
-  }
-
-  async debugSearch(brand: string) {
-    const url = `https://www.ebay.co.uk/sch/281/i.html?_fsrp=1&_from=R40&_nkw=${brand}&LH_PrefLoc=1&_udhi=8&_sop=10&rt=nc&LH_BIN=1`;
-    return this.ebayService.searchByUrl(url);
   }
 }

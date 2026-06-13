@@ -16,7 +16,7 @@ Monitors eBay saved searches for vintage items and sends new listing links to Te
 | Service | What you need |
 | ------- | ------------- |
 | **MongoDB Atlas** | Cluster + connection string; `links` collection |
-| **eBay Developer** | Production (or sandbox) app with Browse API access; Client ID + Secret |
+| **eBay Developer** | Production app with Browse API access; Client ID + Secret |
 | **Telegram** | Bot token from [@BotFather](https://t.me/BotFather); chat IDs for recipients |
 | **Google Cloud** | Service account with access to the spreadsheet; JSON key (client email + private key) |
 | **Google Sheet** | Spreadsheet ID and worksheet name with brand rows (`url`, `brandName`) |
@@ -79,7 +79,6 @@ Add these under **Settings → Secrets and variables → Actions** in your repos
 | `GOOGLE_CLOUD_CLIENT_EMAIL` | Service account email |
 | `EBAY_CLIENT_ID` | eBay application Client ID |
 | `EBAY_CLIENT_SECRET` | eBay application Client Secret |
-| `EBAY_ENVIRONMENT` | Optional: `production` (default) or `sandbox` |
 
 ---
 
@@ -130,7 +129,6 @@ GOOGLE_CLOUD_CLIENT_EMAIL=...@....iam.gserviceaccount.com
 
 EBAY_CLIENT_ID=...
 EBAY_CLIENT_SECRET=...
-EBAY_ENVIRONMENT=production
 ```
 
 ### Commands
@@ -141,7 +139,6 @@ npm run build
 npm run lint
 npm run mongo:step0   # one-time DB migration (before first deploy)
 npm run cron          # one-shot job (same as production)
-npm run dev           # HTTP server on :3000 for debug (GET /:brand)
 ```
 
 `npm run cron` is the integration test path — it runs the full job once and exits.

@@ -1,6 +1,16 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 
 import { Injectable } from '@nestjs/common';
+import {
+  buildEbaySearchParams,
+  EbaySearchParams,
+  Region,
+} from 'src/ebay/ebay-search-builder';
+
+export interface BrandSearch {
+  searchParams: EbaySearchParams;
+  brandName: string;
+}
 
 @Injectable()
 export class GoogleSpreadsheetsService {
@@ -10,9 +20,7 @@ export class GoogleSpreadsheetsService {
     this.doc = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID);
   }
 
-  async getLinksFromGoogleSheet(): Promise<
-    { url: string; brandName: string }[]
-  > {
+  async getBrandSearchesFromGoogleSheet(): Promise<BrandSearch[]> {
     await this.doc.useServiceAccountAuth({
       private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY.split(
         String.raw`\n`,
@@ -24,20 +32,36 @@ export class GoogleSpreadsheetsService {
     const sheet =
       this.doc.sheetsByTitle[process.env.GOOGLE_SPREADSHEET_WORKSHEET_NAME];
     const rows = await sheet.getRows();
-    const linksUK = rows
+
+    const ukSearches = rows
       .filter((row) => row.SendToTgUK === 'TRUE')
-      .map((row) => ({
-        url: row.URLUK,
-        brandName: `${row.BrandName}_UK`,
-      }))
-      .filter((link) => link.url);
-    const linksUSA = rows
+      .map((row) =>
+        toBrandSearch(row.BrandName, row.MaxPriceUK, row.BuyNowUK, 'UK'),
+      )
+      .filter((search): search is BrandSearch => search !== null);
+
+    const usaSearches = rows
       .filter((row) => row.SendToTgUSA === 'TRUE')
-      .map((row) => ({
-        url: row.URLUSA,
-        brandName: `${row.BrandName}_USA`,
-      }))
-      .filter((link) => link.url);
-    return [...linksUK, ...linksUSA];
+      .map((row) =>
+        toBrandSearch(row.BrandName, row.MaxPriceUSA, row.BuyNowUSA, 'USA'),
+      )
+      .filter((search): search is BrandSearch => search !== null);
+
+    return [...ukSearches, ...usaSearches];
   }
+}
+
+function toBrandSearch(
+  brandName: string,
+  maxPrice: string | number | undefined,
+  buyNow: string | undefined,
+  region: Region,
+): BrandSearch | null {
+  const searchParams = buildEbaySearchParams(
+    { brandName, maxPrice, buyNowOnly: buyNow === 'TRUE' },
+    region,
+  );
+  if (!searchParams) return null;
+
+  return { searchParams, brandName: `${brandName}_${region}` };
 }

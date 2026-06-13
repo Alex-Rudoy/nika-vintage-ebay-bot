@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { CoreService } from './core/core.service';
 import { Link, LinkSchema } from './core/link.schema';
 import { GoogleSpreadsheetsService } from './google-spreadsheets/google-spreadsheets.service';
@@ -17,10 +15,7 @@ import { EbayService } from './ebay/ebay.service';
     MongooseModule.forFeature([{ name: Link.name, schema: LinkSchema }]),
     MongooseModule.forFeature([{ name: ChatId.name, schema: ChatIdSchema }]),
   ],
-
-  controllers: [AppController],
   providers: [
-    AppService,
     TelegramService,
     GoogleSpreadsheetsService,
     CoreService,

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EbaySearchParams, parseEbaySearchUrl } from './ebay-url-parser';
+import { EbaySearchParams } from './ebay-search-builder';
 
 interface OAuthTokenResponse {
   access_token: string;
@@ -26,16 +26,7 @@ export class EbayService {
   private accessToken?: string;
   private tokenExpiresAt = 0;
 
-  private get apiBase(): string {
-    return process.env.EBAY_ENVIRONMENT === 'sandbox'
-      ? 'https://api.sandbox.ebay.com'
-      : 'https://api.ebay.com';
-  }
-
-  async searchByUrl(ebaySearchUrl: string): Promise<string[]> {
-    const params = parseEbaySearchUrl(ebaySearchUrl);
-    return this.search(params);
-  }
+  private static readonly API_BASE = 'https://api.ebay.com';
 
   async search(params: EbaySearchParams): Promise<string[]> {
     const token = await this.getAccessToken();
@@ -47,7 +38,7 @@ export class EbayService {
     if (params.filters.length) query.set('filter', params.filters.join(','));
     query.set('limit', '50');
 
-    const url = `${this.apiBase}/buy/browse/v1/item_summary/search?${query}`;
+    const url = `${EbayService.API_BASE}/buy/browse/v1/item_summary/search?${query}`;
 
     this.logger.log(`eBay API search: ${url}`);
 
@@ -127,17 +118,20 @@ export class EbayService {
       'base64',
     );
 
-    const response = await fetch(`${this.apiBase}/identity/v1/oauth2/token`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+    const response = await fetch(
+      `${EbayService.API_BASE}/identity/v1/oauth2/token`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'client_credentials',
+          scope: 'https://api.ebay.com/oauth/api_scope',
+        }),
       },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        scope: 'https://api.ebay.com/oauth/api_scope',
-      }),
-    });
+    );
 
     if (!response.ok) {
       const body = await response.text();

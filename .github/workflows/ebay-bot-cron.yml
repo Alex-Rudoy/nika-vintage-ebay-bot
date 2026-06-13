@@ -44,4 +44,3 @@ jobs:
           GOOGLE_CLOUD_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLOUD_CLIENT_EMAIL }}
           EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
           EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
-          EBAY_ENVIRONMENT: ${{ secrets.EBAY_ENVIRONMENT }}
