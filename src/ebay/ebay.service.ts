@@ -21,6 +21,8 @@ interface SearchResponse {
 @Injectable()
 export class EbayService {
   private readonly logger = new Logger(EbayService.name);
+  private static readonly RETRY_DELAYS_MS = [5000, 15000, 45000];
+  private static readonly MAX_RETRIES = 3;
   private accessToken?: string;
   private tokenExpiresAt = 0;
 
@@ -49,28 +51,64 @@ export class EbayService {
 
     this.logger.log(`eBay API search: ${url}`);
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'X-EBAY-C-MARKETPLACE-ID': params.marketplaceId,
-        'Content-Type': 'application/json',
-      },
-    });
+    for (let attempt = 0; attempt <= EbayService.MAX_RETRIES; attempt++) {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-EBAY-C-MARKETPLACE-ID': params.marketplaceId,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    if (!response.ok) {
+      if (response.ok) {
+        const data = (await response.json()) as SearchResponse;
+        const items = data.itemSummaries ?? [];
+
+        this.logger.log(
+          `eBay API returned ${items.length} items (total: ${data.total ?? 0})`,
+        );
+
+        return items
+          .map((item) => item.itemWebUrl?.split('?')[0])
+          .filter((url): url is string => Boolean(url));
+      }
+
       const body = await response.text();
-      this.logger.error(`eBay API error ${response.status}: ${body}`);
-      return [];
+      const retryable = response.status === 429 || response.status >= 500;
+
+      if (!retryable || attempt === EbayService.MAX_RETRIES) {
+        this.logger.error(`eBay API error ${response.status}: ${body}`);
+        return [];
+      }
+
+      const delayMs = this.getRetryDelayMs(attempt, response);
+      this.logger.warn(
+        `eBay API ${response.status}, retry ${attempt + 1}/${
+          EbayService.MAX_RETRIES
+        } in ${delayMs}ms`,
+      );
+      await this.sleep(delayMs);
     }
 
-    const data = (await response.json()) as SearchResponse;
-    const items = data.itemSummaries ?? [];
+    return [];
+  }
 
-    this.logger.log(`eBay API returned ${items.length} items (total: ${data.total ?? 0})`);
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
 
-    return items
-      .map((item) => item.itemWebUrl?.split('?')[0])
-      .filter((url): url is string => Boolean(url));
+  private getRetryDelayMs(attempt: number, response: Response): number {
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      if (retryAfter) {
+        const seconds = Number(retryAfter);
+        if (Number.isFinite(seconds)) {
+          return seconds * 1000;
+        }
+      }
+    }
+
+    return EbayService.RETRY_DELAYS_MS[attempt] ?? 45000;
   }
 
   private async getAccessToken(): Promise<string> {
@@ -89,20 +127,17 @@ export class EbayService {
       'base64',
     );
 
-    const response = await fetch(
-      `${this.apiBase}/identity/v1/oauth2/token`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          scope: 'https://api.ebay.com/oauth/api_scope',
-        }),
+    const response = await fetch(`${this.apiBase}/identity/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-    );
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        scope: 'https://api.ebay.com/oauth/api_scope',
+      }),
+    });
 
     if (!response.ok) {
       const body = await response.text();

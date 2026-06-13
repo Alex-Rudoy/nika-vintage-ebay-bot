@@ -4,6 +4,7 @@ declare global {
       GOOGLE_SPREADSHEET_ID: string;
       GOOGLE_SPREADSHEET_WORKSHEET_NAME: string;
       TELEGRAM_TOKEN: string;
+      TELEGRAM_CHAT_IDS: string;
       GOOGLE_CLOUD_PRIVATE_KEY: string;
       GOOGLE_CLOUD_CLIENT_EMAIL: string;
       MONGO_URL: string;

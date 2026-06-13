@@ -32,7 +32,7 @@ export function parseEbaySearchUrl(url: string): EbaySearchParams {
   const parsed = new URL(url);
   const marketplaceId =
     MARKETPLACE_BY_HOST[parsed.hostname] ??
-  inferMarketplaceFromBrand(url) ??
+    inferMarketplaceFromBrand(url) ??
     'EBAY_GB';
 
   const params = parsed.searchParams;

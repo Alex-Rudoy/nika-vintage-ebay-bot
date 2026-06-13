@@ -13,6 +13,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "cron": "node dist/cron.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -30,8 +31,7 @@
     "mongoose": "^7.0.3",
     "node-html-parser": "^6.1.5",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.2.0",
-    "telegraf": "^4.12.2"
+    "rxjs": "^7.2.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",

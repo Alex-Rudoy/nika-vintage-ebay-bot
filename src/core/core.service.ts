@@ -9,32 +9,31 @@ import { Link } from './link.schema';
 
 @Injectable()
 export class CoreService {
-  savedLinks: Set<string> = new Set();
-
   constructor(
     private readonly googleSpreadsheetService: GoogleSpreadsheetsService,
     private readonly telegramService: TelegramService,
     private readonly ebayService: EbayService,
     @InjectModel(Link.name) private linkModel: Model<Link>,
-  ) {
-    this.checkForNewItems = this.checkForNewItems.bind(this);
-    this.init();
+  ) {}
+
+  async backfillLegacyLinks(): Promise<void> {
+    await this.linkModel.updateMany(
+      { createdAt: { $exists: false } },
+      { $set: { createdAt: new Date() } },
+    );
   }
 
-  async init() {
-    await this.getAllLinksFromDB();
-    await this.checkForNewItems();
-    setInterval(this.checkForNewItems, 1000 * 60 * 60); // 1 hour
+  async cleanupOldLinks(): Promise<void> {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    await this.linkModel.deleteMany({ createdAt: { $lt: ninetyDaysAgo } });
   }
 
-  async getAllLinksFromDB() {
-    console.log('getAllLinksFromDB');
-    const linksFromDB = await this.linkModel.find().exec();
-    this.savedLinks = new Set(linksFromDB.map((link) => link.link));
-    console.log('saved links size: ', this.savedLinks.size);
-  }
+  async checkForNewItems(): Promise<void> {
+    await this.backfillLegacyLinks();
+    await this.cleanupOldLinks();
 
-  async checkForNewItems() {
     const linksFromGoogleDoc =
       await this.googleSpreadsheetService.getLinksFromGoogleSheet();
 
@@ -49,21 +48,29 @@ export class CoreService {
     }
   }
 
-  async addLinkAndNotify(link: string, brandName: string) {
+  async addLinkAndNotify(link: string, brandName: string): Promise<void> {
     try {
-      console.log('adding link: ', link);
-      if (this.savedLinks.has(link)) return;
+      await this.linkModel.create({ link, brandName });
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: number }).code === 11000
+      ) {
+        return;
+      }
+      throw error;
+    }
 
-      await this.linkModel.create({ link });
-      this.savedLinks.add(link);
-      const formattedBrandName = brandName.replace(/\s+/g, '_');
+    const formattedBrandName = brandName.replace(/\s+/g, '_');
+    try {
       await this.telegramService.sendMessageInTelegram(
         `#${formattedBrandName} ${link}`,
       );
     } catch (error) {
-      console.log('Error in add link:', error);
-      await new Promise((resolve) => setTimeout(resolve, 1000 * 10));
-      await this.addLinkAndNotify(link, brandName);
+      await this.linkModel.deleteOne({ link });
+      throw error;
     }
   }
 
