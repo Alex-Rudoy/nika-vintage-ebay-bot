@@ -9,6 +9,7 @@ import { GoogleSpreadsheetsService } from './google-spreadsheets/google-spreadsh
 import { ChatId, ChatIdSchema } from './telegram/chatId.schema';
 import { TelegramService } from './telegram/telegram.service';
 import { CoreController } from './core/core.controller';
+import { EbayService } from './ebay/ebay.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CoreController } from './core/core.controller';
     TelegramService,
     GoogleSpreadsheetsService,
     CoreService,
+    EbayService,
   ],
 })
 export class AppModule {}

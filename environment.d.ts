@@ -7,6 +7,9 @@ declare global {
       GOOGLE_CLOUD_PRIVATE_KEY: string;
       GOOGLE_CLOUD_CLIENT_EMAIL: string;
       MONGO_URL: string;
+      EBAY_CLIENT_ID: string;
+      EBAY_CLIENT_SECRET: string;
+      EBAY_ENVIRONMENT?: 'production' | 'sandbox';
     }
   }
 }

@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { parse } from 'node-html-parser';
+import { EbayService } from 'src/ebay/ebay.service';
 import { GoogleSpreadsheetsService } from 'src/google-spreadsheets/google-spreadsheets.service';
 import { TelegramService } from 'src/telegram/telegram.service';
 
@@ -14,6 +14,7 @@ export class CoreService {
   constructor(
     private readonly googleSpreadsheetService: GoogleSpreadsheetsService,
     private readonly telegramService: TelegramService,
+    private readonly ebayService: EbayService,
     @InjectModel(Link.name) private linkModel: Model<Link>,
   ) {
     this.checkForNewItems = this.checkForNewItems.bind(this);
@@ -38,13 +39,13 @@ export class CoreService {
       await this.googleSpreadsheetService.getLinksFromGoogleSheet();
 
     for (const linkFromGoogleDoc of linksFromGoogleDoc) {
-      const productLinksFound = await this.getProductLinksFromHTML(
+      const productLinksFound = await this.ebayService.searchByUrl(
         linkFromGoogleDoc.url,
       );
       for (const productLink of productLinksFound) {
         await this.addLinkAndNotify(productLink, linkFromGoogleDoc.brandName);
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000 * 5)); // wait 5 second to not get banned by ebay
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 2));
     }
   }
 
@@ -61,58 +62,13 @@ export class CoreService {
       );
     } catch (error) {
       console.log('Error in add link:', error);
-      await new Promise((resolve) => setTimeout(resolve, 1000 * 10)); // wait 10 sec and try again
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 10));
       await this.addLinkAndNotify(link, brandName);
     }
   }
 
-  async getProductLinksFromHTML(ebayListLink: string): Promise<string[]> {
-    try {
-      console.log('fetching: ', ebayListLink);
-
-      const productLinksOnPage: string[] = [];
-      const response = await fetch(`${ebayListLink}&_fcid=3`);
-      const html = await response.text();
-      const root = parse(html);
-      console.log('html: ', html);
-      const listOfResults = root.querySelectorAll('ul.srp-results li');
-      console.log('listOfResults: ', listOfResults);
-
-      if (
-        root
-          .querySelector(
-            '.srp-river-answer .su-notice .section-notice .section-notice__main',
-          )
-          ?.innerText?.includes('0 results found in the ')
-      ) {
-        console.log('no results found');
-        return [];
-      }
-
-      for (const listItem of listOfResults) {
-        if (listItem.classList.contains('s-card')) {
-          const newLink = listItem
-            .querySelector('a.su-link')
-            ?.getAttribute('href');
-          console.log('newLink: ', newLink);
-
-          if (newLink) productLinksOnPage.push(newLink.split('?')[0]); // remove query params
-        }
-
-        if (listItem.classList.contains('srp-river-answer--REWRITE_START')) {
-          return productLinksOnPage; // stop parsing if hit the banner
-        }
-      }
-      return productLinksOnPage;
-    } catch (error) {
-      console.log('Error while parsing HTML: ', error);
-      return [];
-    }
-  }
-
-  async showThePage(link: string): Promise<string> {
-    const response = await fetch(`${link}&_fcid=3`);
-    const html = await response.text();
-    return html;
+  async debugSearch(brand: string) {
+    const url = `https://www.ebay.co.uk/sch/281/i.html?_fsrp=1&_from=R40&_nkw=${brand}&LH_PrefLoc=1&_udhi=8&_sop=10&rt=nc&LH_BIN=1`;
+    return this.ebayService.searchByUrl(url);
   }
 }
